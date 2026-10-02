@@ -1,0 +1,1047 @@
+1.a)waterjug
+from collections import deque
+
+jug1_capacity = 4
+jug2_capacity = 3
+
+initial_state = (0,0)
+visited = set()
+queue = deque([initial_state])
+print("state space:")
+
+while queue:
+  state= queue.popleft()
+
+  if state in visited:
+    continue
+
+  visited.add(state)
+
+  x,y= state
+  print(state)
+
+  next_states =[
+      (jug1_capacity, y),
+      (x, jug2_capacity),
+      (0,y),
+      (x,0),
+  ]
+
+  transfer = min(x, jug2_capacity - y)
+  next_states.append((x - transfer, y + transfer))
+
+  transfer = min(y, jug1_capacity - x)
+  next_states.append((x + transfer, y - transfer))
+
+  for next_state in next_states:
+    if next_state not in visited:
+      queue.append(next_state)
+
+print("\nTotal reachable state =", len(visited))
+
+
+
+
+
+
+
+
+b)number puzzle
+def print_board(board):
+  for row in board:
+    print(row)
+print()
+
+def find_blank(board):
+  for i in range(3):
+    for j in range(3):
+      if board[i][j] == 0:
+        return i,j
+
+def generate_moves(board):
+  x,y = find_blank(board)
+
+  moves = [(-1,0),(1,0),(0,-1),(0,1)]
+  successors = []
+
+  for dx,dy in moves:
+    nx,ny = x + dx, y + dy
+
+    if 0 <= nx < 3 and 0 <= ny < 3:
+      new_board = [row[:] for row in board]
+
+      new_board[x][y], new_board[nx][ny] = new_board[nx][ny], new_board[x][y]
+
+      successors.append(new_board)
+
+  return successors
+
+board = [
+    [1,2,3],
+    [4,5,6],
+    [7,0,8]
+]
+
+print("Initial state:")
+print_board(board)
+
+print("Possible next states:")
+
+for state in generate_moves(board):
+  print_board(state)
+
+
+
+
+
+
+
+
+
+2.a)dfs
+graph = {
+    'A': ['B', 'C'],
+    'B': ['D', 'E'],
+    'C': ['F'],
+    'D': [],
+    'E': ['F'],
+    'F': []
+}
+
+def dfs(graph, start, goal):
+  stack = [[start]]
+  visited = set()
+
+  while stack:
+    path = stack.pop()
+    node = path[-1]
+
+    if node == goal:
+      return path
+
+    if node not in visited:
+      visited.add(node)
+
+      for neighbor in reversed(graph[node]):
+        new_path = list(path)
+        new_path.append(neighbor)
+        stack.append(new_path)
+
+  return None
+
+start = 'A'
+goal = 'F'
+
+result = dfs(graph, start, goal)
+
+if result:
+  print("Path found:", " -> ".join(result))
+else:
+  print("No path found")
+
+
+
+
+
+
+
+
+
+
+
+
+b)bfs
+from collections import deque
+
+graph = {
+    'A': ['B', 'C'],
+    'B': ['D', 'E'],
+    'C': ['F'],
+    'D': [],
+    'E': ['F'],
+    'F': []
+}
+
+def bfs(graph, start, goal):
+    queue = deque([start])
+    visited = set()
+
+    while queue:
+        path = queue.popleft()
+        node = path[-1]
+
+        if node == goal:
+            return path
+
+        if node not in visited:
+            visited.add(node)
+
+            for neighbor in graph[node]:
+              new_path = list(path)
+              new_path.append(neighbor)
+              queue.append(new_path)
+
+    return None
+
+
+start = 'A'
+goal = 'F'
+
+path = bfs(graph, start, goal)
+
+if path:
+    print("Path found:", " -> ".join(path))
+else:
+    print("No path found.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+3.a)hill climbing
+import math
+
+points=[(1,5),(6,4),(5,2),(2,1)]
+
+x,y= 1.0, 1.0
+step= 0.1
+
+def total_distance(x,y):
+  return sum((x-px)**2+(y-py)**2 for px,py in points)
+current=total_distance(x,y)
+iteration =1
+
+while True:
+  print(f"Iteration {iteration}: ({x:.1f}, {y:.1f}) Distance = {current:.2f}")
+
+  neighbors=[
+      (x+ step,y),
+      (x- step,y),
+      (x, y+step),
+      (x, y-step)
+  ]
+
+  best_x,best_y=x,y
+  best_dist=current
+
+  for nx,ny in neighbors:
+    d= total_distance(nx,ny)
+    if d<best_dist:
+      best_x,best_y=nx,ny
+      best_dist=d
+
+
+  if best_dist >= current:
+    break
+
+  x,y = best_x,best_y
+  current = best_dist
+  iteration+=1
+
+print("\nOptional Point:",(round(x,2),round(y,2)))
+print("Minimum Distance:", round(current,2))
+
+
+
+
+
+
+
+
+b)a* algorithm
+!pip install simpleai
+!pip install pydot flask
+from simpleai.search import SearchProblem, astar
+
+GOAL = "helloworld"
+class HelloProblem(SearchProblem):
+    def actions(self, state):
+        if len(state) < len(GOAL):
+            return list("abcdefghijklmnopqrstuvwxyz")
+        else:
+            return []
+
+    def result(self, state, action):
+        return state + action
+
+    def is_goal(self, state):
+        return state == GOAL
+
+    def heuristic(self, state):
+        wrong = sum(
+            1
+            for i in range(len(state))
+            if state[i] != GOAL[i]
+        )
+        missing = len(GOAL) - len(state)
+        return wrong + missing
+
+problem = HelloProblem(initial_state="")
+result = astar(problem)
+print("Goal State:",result.state)
+print("\nPath:")
+for action, state in result.path():
+    print(action, "->", state)
+
+
+
+
+
+
+
+
+
+
+4.a)4-queen
+class QueenChessBoard:
+    def __init__(self, size):
+        self.size = size
+        self.columns=[]
+
+    def place_in_next_row(self,column):
+      self.columns.append(column)
+
+    def remove_in_current_row(self):
+      return self.columns.pop()
+
+    def is_this_column_safe_in_next_row(self,column):
+      row =len(self.columns)
+
+      for queen_column in self.columns:
+        if column== queen_column:
+          return False
+
+      for queen_row,queen_column in enumerate(self.columns):
+        if queen_column-queen_row==column-row:
+          return False
+
+      for queen_row,queen_column in enumerate(self.columns):
+        if (self.size-queen_column)-queen_row==(self.size-column)-row:
+          return False
+
+      return True
+
+    def display(self):
+      for row in range(self.size):
+        for column in range(self.size):
+          if column==self.columns[row]:
+            print("Q",end=" ")
+          else:
+            print("*",end=" ")
+        print()
+
+def solve_queen(size):
+  board = QueenChessBoard(size)
+  number_of_solutions = 0
+  row = 0
+  column = 0
+
+  while True:
+    while column < size:
+      if board.is_this_column_safe_in_next_row(column):
+        board.place_in_next_row(column)
+        row += 1
+        column = 0
+        break
+      else:
+        column += 1
+    if column == size or row == size:
+      if row == size:
+        board.display()
+        print()
+        number_of_solutions += 1
+        board.remove_in_current_row()
+        row -= 1
+
+      try:
+        prev_column = board.remove_in_current_row()
+      except IndexError:
+        break
+
+      row -= 1
+      column = prev_column + 1
+  print("Number of solution:",number_of_solutions)
+n=int(input("Enter the number of queens:"))
+solve_queen(n)
+
+
+
+
+
+
+
+
+
+
+
+b)map coloring
+graph ={
+    'A':['B','C'],
+    'B':['A','C','D'],
+    'C':['A','B','D'],
+    'D':['B','C'],
+}
+
+colors=['Red','Green','Blue']
+
+assignment={}
+
+def is_safe(region,color):
+  for neighbor in graph[region]:
+    if neighbor in assignment and assignment[neighbor]==color:
+      return False
+  return True
+
+def map_coloring():
+  if len(assignment)==len(graph):
+    return True
+
+  for region in graph:
+    if region not in assignment:
+      for color in colors:
+        if is_safe(region,color):
+          assignment[region]=color
+          if map_coloring():
+            return True
+          del assignment[region]
+      return False
+
+if map_coloring():
+  print("Map coloring solution:")
+  for region in assignment:
+    print(region,"->",assignment[region])
+else:
+  print("No solution exists.")
+
+
+
+
+
+
+
+
+
+
+
+
+
+5.a)tictactoe
+board = [' ' for i in range(9)]
+
+def display():
+    print(board[0], '|', board[1], '|', board[2])
+    print('--+---+--')
+    print(board[3], '|', board[4], '|', board[5])
+    print('--+---+--')
+    print(board[6], '|', board[7], '|', board[8])
+
+def check(player):
+    win = [(0,1,2), (3,4,5), (6,7,8),
+           (0,3,6), (1,4,7), (2,5,8),
+           (0,4,8), (2,4,6)]
+
+    for a,b,c in win:
+        if board[a] == board[b] == board[c] == player:
+            return True
+    return False
+
+def minimax(max_player):
+    if check('O'):
+        return 1
+    if check('X'):
+        return -1
+    if ' ' not in board:
+        return 0
+
+    if max_player:
+        best = -100
+        for i in range(9):
+            if board[i] == ' ':
+                board[i] = 'O'
+                score = minimax(False)
+                board[i] = ' '
+                best = max(best, score)
+        return best
+
+    else:
+        best = 100
+        for i in range(9):
+            if board[i] == ' ':
+                board[i] = 'X'
+                score = minimax(True)
+                board[i] = ' '
+                best = min(best, score)
+        return best
+
+def best_move():
+    best_score = -100
+    move = 0
+
+    for i in range(9):
+        if board[i] == ' ':
+            board[i] = 'O'
+            score = minimax(False)
+            board[i] = ' '
+
+            if score > best_score:
+                best_score = score
+                move = i
+
+    return move
+
+# Game
+print("TIC-TAC-TOE")
+print("Player = X, Computer = O")
+
+while True:
+    display()
+
+    p = int(input("Enter position (1-9): ")) - 1
+
+    if board[p] != ' ':
+        print("Position already occupied!")
+        continue
+
+    board[p] = 'X'
+
+    if check('X'):
+        display()
+        print("Player Wins!")
+        break
+
+    if ' ' not in board:
+        display()
+        print("Draw!")
+        break
+
+    # Computer move
+    p = best_move()
+    board[p] = 'O'
+
+    if check('O'):
+        display()
+        print("Computer Wins!")
+        break
+
+
+
+
+
+
+
+
+
+
+
+
+
+b)Alpha-Beta Pruning
+
+def alphabeta(depth, index, max_player, values, alpha, beta):
+
+    # Leaf node
+    if depth == 0:
+        return values[index]
+
+    if max_player:
+        best = -1000
+
+        for i in range(2):
+            value = alphabeta(depth - 1,
+                              index * 2 + i,
+                              False, values, alpha, beta)
+
+            best = max(best, value)
+            alpha = max(alpha, best)
+
+            if beta <= alpha:
+                break
+
+        return best
+
+    else:
+        best = 1000
+
+        for i in range(2):
+            value = alphabeta(depth - 1,
+                              index * 2 + i,
+                              True, values, alpha, beta)
+
+            best = min(best, value)
+            beta = min(beta, best)
+
+            if beta <= alpha:
+                break
+
+        return best
+
+
+# Leaf values
+values = [3, 5, 2, 9]
+
+alpha = -1000
+beta = 1000
+
+result = alphabeta(2, 0, True, values, alpha, beta)
+
+print("Leaf values:", values)
+print("Best value using Alpha-Beta Pruning =", result)
+
+
+
+
+
+
+
+
+
+
+
+6.a)missionaries and cannibals
+from collections import deque
+def valid(m, c):
+    return 0 <= m <= 3 and 0 <= c <= 3 and \
+           (m == 0 or m >= c) and \
+           (3-m == 0 or 3-m >= 3-c)
+
+def solve():
+    start = (3, 3, 0)
+    goal = (0, 0, 1)
+    moves = [(1,0),(2,0),(0,1),(0,2),(1,1)]
+
+    q=deque([(start,[start])])
+    seen={start}
+    while q:
+      (m,c,b),path=q.popleft()
+
+      if(m,c,b)==goal:
+        return path
+
+      for dm,dc in moves:
+        if b==0:
+          s=(m-dm, c-dc, 1)
+        else:
+          s=(m+dm, c+dc, 0)
+
+        if valid(s[0],s[1]) and s not in seen:
+                seen.add(s)
+                q.append((s, path+[s]))
+
+path=solve()
+for i, s in enumerate(path):
+  print(i,s)
+
+
+
+
+
+
+
+
+b)cards
+import random
+
+suits = ['Hearts', 'Diamonds', 'Clubs', 'Spades']
+ranks = ['2', '3', '4', '5', '6', '7', '8', '9', '10',
+         'J', 'Q', 'K', 'A']
+
+deck = []
+
+for suit in suits:
+    for rank in ranks:
+        deck.append(rank + ' of ' + suit)
+
+print("Original Deck:")
+print(deck)
+
+random.shuffle(deck)
+
+print("\nShuffled Deck:")
+for card in deck:
+    print(card)
+
+
+
+
+7
+A)derive the predicate
+% PRACTICAL 7
+
+% A) Derive the Predicate
+
+batsman(sachin).
+cricketer(X) :- batsman(X).
+
+
+% B) Prolog Fundamentals
+
+student(rahul).
+student(priya).
+student(amit).
+
+likes(rahul, programming).
+likes(amit, programming).
+likes(priya, ai).
+
+programming(X) :- student(X), likes(X, programming).
+ai_student(X) :- student(X), likes(X, ai).
+?- cricketer(sachin).
+true.
+
+?- student(rahul).
+true.
+
+?- student(amit).
+true.
+
+?- student(priya).
+true.
+
+?- student(rahul), likes(rahul, programming).
+true.
+
+?- student(amit), likes(amit, programming).
+true.
+
+?- student(priya), likes(priya, programming).
+false.
+
+?- student(priya), likes(priya, ai).
+true.
+
+
+
+
+
+
+
+
+8)family prolog
+% Facts
+
+male(john).
+male(peter).
+male(robert).
+male(david).
+
+female(mary).
+female(susan).
+female(lisa).
+female(anna).
+
+parent(john,peter).
+parent(mary,peter).
+
+parent(john,lisa).
+parent(mary,lisa).
+
+parent(peter,david).
+parent(susan,david).
+
+parent(peter,anna).
+parent(susan,anna).
+
+parent(robert,susan).
+
+% Rules
+
+father(X,Y) :-
+    male(X),
+    parent(X,Y).
+
+mother(X,Y) :-
+    female(X),
+    parent(X,Y).
+
+grandfather(X,Y) :-
+    male(X),
+    parent(X,Z),
+    parent(Z,Y).
+
+grandmother(X,Y) :-
+    female(X),
+    parent(X,Z),
+    parent(Z,Y).
+
+brother(X,Y) :-
+    male(X),
+    parent(P,X),
+    parent(P,Y),
+    X \= Y.
+
+sister(X,Y) :-
+    female(X),
+    parent(P,X),
+    parent(P,Y),
+    X \= Y.
+
+uncle(X,Y) :-
+    male(X),
+    parent(P,Y),
+    brother(X,P).
+
+aunt(X,Y) :-
+    female(X),
+    parent(P,Y),
+    sister(X,P).
+
+nephew(X,Y) :-
+    male(X),
+    parent(P,X),
+    (brother(P,Y) ; sister(P,Y)).
+
+niece(X,Y) :-
+    female(X),
+    parent(P,X),
+    (brother(P,Y) ; sister(P,Y)).
+
+cousin(X,Y) :-
+    parent(P1,X),
+    parent(P2,Y),
+    (brother(P1,P2) ; sister(P1,P2)).
+
+?- father(john,peter).
+true.
+
+?- mother(mary,lisa).
+true.
+
+?- grandfather(john,david).
+true.
+
+?- grandmother(mary,anna).
+true.
+
+?- brother(peter,lisa).
+true.
+
+?- sister(lisa,peter).
+true.
+
+
+
+
+
+
+9.a)linear regression
+import numpy as np
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_squared_error, mean_absolute_error, r2_score
+
+X = np.array([[1],[2],[3],[4],[5]])
+
+Y =np.array([35,40,50,55,65])
+
+model = LinearRegression()
+
+model.fit(X,Y)
+
+Y_pred = model.predict(X)
+
+hours = np.array([[6]])
+predication = model.predict(hours)
+
+print("predecticted marks for 6 hours of study:",predication[0])
+
+print("/Linear Regression Equation:")
+print("y=",model.coef_[0],"X+",model.intercept_)
+
+print("/slope:",model.coef_[0])
+print("/Intercept:",model.intercept_)
+
+mse = mean_squared_error(Y,Y_pred)
+print("/Mean Squared Error:",mse)
+
+mae = mean_absolute_error(Y,Y_pred)
+print("/Mean Absolute Error:",mae)
+
+rmse = np.sqrt(mse)
+print("/Root Mean Squared Error:",rmse)
+
+r2 = r2_score(Y,Y_pred)
+print("/R2 Score:",r2)
+
+print("\nActual vs Predicted:")
+for actual, predicted in zip(Y,Y_pred):
+    print("Actual:", actual, "Predicted:", round(predicted,2))
+
+
+
+
+
+
+b)classification problem
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.metrics import(
+    log_loss,
+    accuracy_score,
+    confusion_matrix,
+    precision_score,
+    recall_score,
+    f1_score
+    )
+
+X = np.array([[1],[2],[3],[4],[5],[6],[7],[8]])
+
+Y = np.array([0,0,0,0,1,1,1,1])
+
+from sklearn.linear_model import LogisticRegression
+model = LogisticRegression()
+
+model.fit(X,Y)
+
+y_pred = model.predict(X)
+
+y_prob = model.predict_proba(X)
+
+cost = log_loss(Y,y_prob)
+
+print("log_loss(Cost Function):",cost)
+
+accuracy = accuracy_score(Y,y_pred)
+
+print("Accuracy:",accuracy)
+
+cm =confusion_matrix(Y,y_pred)
+
+print("\nConfusion Matrix:")
+print(cm)
+
+precision = precision_score(Y,y_pred)
+
+print("precision:",precision)
+
+recall = recall_score(Y,y_pred)
+
+print("recall:",recall)
+
+f1 = f1_score(Y, y_pred)
+
+f1 = f1_score(Y,y_pred)
+print(f"F1 Score: {f1}")
+
+import numpy as np
+hours = np.array([6])
+
+from sklearn.linear_model import LogisticRegression
+model = LogisticRegression()
+model.fit(X,Y)
+hours_reshaped = hours.reshape(-1, 1)
+prediction = model.predict(hours_reshaped)
+probability = model.predict_proba(hours_reshaped)
+print("\n for student who studied 6 hours\n")
+if prediction[0] == 1:
+  print("Result pass:")
+else:
+  print("Result fail:")
+print("Probability of pass:",probability[0][1])
+print("Probability of fail:",probability[0][0])
+
+
+
+
+
+
+
+10.a)simple neural network
+import numpy as np
+from sklearn.neural_network import MLPClassifier
+
+X = np.array([
+    [1, 50],
+    [2, 55],
+    [2, 60],
+    [3, 65],
+    [4, 70],
+    [5, 75],
+    [6, 80],
+    [7, 85],
+    [8, 90],
+    [9, 95]
+])
+
+y = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1])
+
+model = MLPClassifier(
+    hidden_layer_sizes=(5,),
+    activation='relu',
+    solver='lbfgs',
+    max_iter=2000,
+    random_state=1
+)
+
+model.fit(X, y)
+
+test_data = np.array([
+    [2, 55],
+    [5, 75],
+    [8, 90]
+])
+
+predictions = model.predict(test_data)
+
+for i in range(len(test_data)):
+    if predictions[i] == 1:
+        result = "Pass"
+    else:
+        result = "Fail"
+
+    print("Study Hours:", test_data[i][0],
+          "Attendance:", test_data[i][1], "%",
+          "Prediction:", result)
+
+
+
+
+
+
+b)support vector machine
+import numpy as np
+from sklearn import svm
+
+X = np.array([
+    [1, 50],
+    [2, 55],
+    [2, 60],
+    [3, 65],
+    [4, 70],
+    [5, 75],
+    [6, 80],
+    [7, 85],
+    [8, 90],
+    [9, 95]
+])
+
+y = np.array([0, 0, 0, 0, 1, 1, 1, 1, 1, 1])
+
+model = svm.SVC(kernel='linear')
+
+model.fit(X, y)
+
+test_data = np.array([
+    [2, 55],
+    [5, 75],
+    [8, 90]
+])
+
+predictions = model.predict(test_data)
+
+for i in range(len(test_data)):
+    if predictions[i] == 1:
+        result = "Pass"
+    else:
+        result = "Fail"
+
+    print("Study Hours:", test_data[i][0])
+    print("Attendance:", test_data[i][1], "%")
+    print("Prediction:", result)
+    print()
